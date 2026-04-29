@@ -1,0 +1,8 @@
+## Interface: 30300
+## Title: Talent Templates
+## Notes: Allows saving and applying talent and glyph presets.
+## Author: Jules
+## Version: 1.0
+## SavedVariables: TalentTemplatesDB
+
+TalentTemplates.lua
