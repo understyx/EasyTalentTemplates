@@ -430,10 +430,10 @@ local function CreateUI()
     titleFs:SetPoint("TOP", 0, -7)
     titleFs:SetText("|cffffd700Talent Templates|r")
 
-    -- Scroll frame
+    -- Scroll frame (fills the full panel below the title bar)
     local scrollFrame = CreateFrame("ScrollFrame", "TalentTemplatesScrollFrame", mainFrame, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT",     5,  -30)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -26, 40)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -26,  5)
 
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
     scrollChild:SetWidth(BUTTON_WIDTH + 4)
@@ -441,11 +441,11 @@ local function CreateUI()
     scrollFrame:SetScrollChild(scrollChild)
     mainFrame.scrollChild = scrollChild
 
-    -- Save button
-    local saveBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
+    -- Save button lives on the talent frame itself
+    local saveBtn = CreateFrame("Button", nil, PlayerTalentFrame, "UIPanelButtonTemplate")
     saveBtn:SetSize(140, 24)
-    saveBtn:SetPoint("BOTTOM", 0, 10)
-    saveBtn:SetText("Save Current")
+    saveBtn:SetPoint("BOTTOMRIGHT", PlayerTalentFrame, "BOTTOMRIGHT", -10, 8)
+    saveBtn:SetText("Save Template")
     saveBtn:SetScript("OnClick", function()
         local dlg = CreateSaveDialog()
         dlg:Show()
