@@ -1,12 +1,12 @@
 local ADDON_NAME, addon = ...
 
 -- ===== CONSTANTS =====
-local PANEL_WIDTH    = 265
-local BUTTON_WIDTH   = 237
+local PANEL_WIDTH    = 460
+local BUTTON_WIDTH   = 432
 local GLYPH_ROW_H    = 14   -- px per glyph row
-local BUTTON_TOP_H   = 54   -- px reserved for icon + name + info + divider
+local BUTTON_TOP_H   = 74   -- px reserved for icon + name + info + divider
 local BUTTON_PAD     = 6    -- bottom padding inside each button
-local BUTTON_GAP     = 5    -- vertical gap between buttons
+local BUTTON_GAP     = 4    -- vertical gap between buttons
 
 -- ===== DATABASE =====
 local function CheckInit()
@@ -157,27 +157,27 @@ local function MakePresetButton(parent, preset, index, y)
 
     -- Icon
     local iconTex = btn:CreateTexture(nil, "ARTWORK")
-    iconTex:SetSize(36, 36)
-    iconTex:SetPoint("TOPLEFT", 6, -8)
+    iconTex:SetSize(50, 50)
+    iconTex:SetPoint("TOPLEFT", 8, -12)
     iconTex:SetTexture(preset.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
 
     -- Icon border
     local iconBd = btn:CreateTexture(nil, "OVERLAY")
-    iconBd:SetSize(40, 40)
+    iconBd:SetSize(56, 56)
     iconBd:SetPoint("CENTER", iconTex, "CENTER")
     iconBd:SetTexture("Interface\\Buttons\\UI-Quickslot2")
 
     -- Template name
-    local nameFs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    nameFs:SetPoint("TOPLEFT", iconTex, "TOPRIGHT", 6, -2)
+    local nameFs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    nameFs:SetPoint("TOPLEFT", iconTex, "TOPRIGHT", 8, -2)
     nameFs:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -24, -2)
     nameFs:SetJustifyH("LEFT")
     nameFs:SetText(preset.name or "Unnamed")
 
     -- Info line (smaller, grey)
     local infoFs = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    infoFs:SetPoint("TOPLEFT", nameFs, "BOTTOMLEFT", 0, -1)
-    infoFs:SetPoint("TOPRIGHT", nameFs, "BOTTOMRIGHT", 0, -1)
+    infoFs:SetPoint("TOPLEFT", nameFs, "BOTTOMLEFT", 0, -2)
+    infoFs:SetPoint("TOPRIGHT", nameFs, "BOTTOMRIGHT", 0, -2)
     infoFs:SetJustifyH("LEFT")
     infoFs:SetTextColor(0.65, 0.65, 0.65)
     infoFs:SetText(preset.info or "")
@@ -185,21 +185,21 @@ local function MakePresetButton(parent, preset, index, y)
     -- Divider
     local div = btn:CreateTexture(nil, "ARTWORK")
     div:SetHeight(1)
-    div:SetPoint("TOPLEFT",  btn, "TOPLEFT",  5, -(BUTTON_TOP_H - 6))
-    div:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -5, -(BUTTON_TOP_H - 6))
+    div:SetPoint("TOPLEFT",  btn, "TOPLEFT",  5, -(BUTTON_TOP_H - 8))
+    div:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -5, -(BUTTON_TOP_H - 8))
     div:SetTexture(0.3, 0.3, 0.3, 0.8)
 
     -- Glyph column headers
     local hdrMaj = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    hdrMaj:SetPoint("TOPLEFT", btn, "TOPLEFT", 6, -(BUTTON_TOP_H - 2))
-    hdrMaj:SetWidth(108)
+    hdrMaj:SetPoint("TOPLEFT", btn, "TOPLEFT", 8, -(BUTTON_TOP_H - 4))
+    hdrMaj:SetWidth(200)
     hdrMaj:SetJustifyH("LEFT")
     hdrMaj:SetTextColor(1, 0.82, 0)
     hdrMaj:SetText("Major Glyphs")
 
     local hdrMin = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    hdrMin:SetPoint("TOPLEFT", btn, "TOPLEFT", 120, -(BUTTON_TOP_H - 2))
-    hdrMin:SetWidth(112)
+    hdrMin:SetPoint("TOPLEFT", btn, "TOPLEFT", 220, -(BUTTON_TOP_H - 4))
+    hdrMin:SetWidth(200)
     hdrMin:SetJustifyH("LEFT")
     hdrMin:SetTextColor(0.4, 0.8, 1.0)
     hdrMin:SetText("Minor Glyphs")
@@ -213,8 +213,8 @@ local function MakePresetButton(parent, preset, index, y)
         local rowY = -(BUTTON_TOP_H + (i - 1) * GLYPH_ROW_H)
 
         local majFs = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        majFs:SetPoint("TOPLEFT", btn, "TOPLEFT", 6, rowY)
-        majFs:SetWidth(108)
+        majFs:SetPoint("TOPLEFT", btn, "TOPLEFT", 8, rowY)
+        majFs:SetWidth(200)
         majFs:SetJustifyH("LEFT")
         if majGlyphs[i] then
             majFs:SetTextColor(1, 0.82, 0)
@@ -225,13 +225,13 @@ local function MakePresetButton(parent, preset, index, y)
         end
 
         local sepFs = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        sepFs:SetPoint("TOPLEFT", btn, "TOPLEFT", 116, rowY)
+        sepFs:SetPoint("TOPLEFT", btn, "TOPLEFT", 210, rowY)
         sepFs:SetTextColor(0.35, 0.35, 0.35)
         sepFs:SetText("|")
 
         local minFs = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        minFs:SetPoint("TOPLEFT", btn, "TOPLEFT", 122, rowY)
-        minFs:SetWidth(110)
+        minFs:SetPoint("TOPLEFT", btn, "TOPLEFT", 216, rowY)
+        minFs:SetWidth(200)
         minFs:SetJustifyH("LEFT")
         if minGlyphs[i] then
             minFs:SetTextColor(0.4, 0.8, 1.0)
