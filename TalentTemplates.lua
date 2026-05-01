@@ -239,11 +239,6 @@ local function MakePresetButton(parent, preset, index, y)
     btn:SetSize(BUTTON_WIDTH, h)
     btn:SetPoint("TOPLEFT", 0, y)
 
-    -- Background
-    local bg = btn:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints()
-    bg:SetTexture(0.08, 0.08, 0.08, 0.9)
-
     -- Hover highlight
     local hl = btn:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints()
@@ -395,45 +390,12 @@ local function CreateUI()
     mainFrame:SetHeight(500)
     mainFrame:SetPoint("TOPLEFT", PlayerTalentFrame, "TOPRIGHT", 5, 0)
     mainFrame:SetFrameStrata("MEDIUM")
-    mainFrame:SetMovable(true)
-    mainFrame:SetClampedToScreen(true)
+    mainFrame:Hide()
 
-    -- Restrict dragging to the title bar area
-    local dragHandle = CreateFrame("Frame", nil, mainFrame)
-    dragHandle:SetHeight(26)
-    dragHandle:SetPoint("TOPLEFT",  mainFrame, "TOPLEFT")
-    dragHandle:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT")
-    dragHandle:EnableMouse(true)
-    dragHandle:SetScript("OnMouseDown", function(self, button)
-        if button == "LeftButton" then
-            mainFrame:StartMoving()
-        end
-    end)
-    dragHandle:SetScript("OnMouseUp", function()
-        mainFrame:StopMovingOrSizing()
-    end)
-
-    -- Panel background
-    local bgTex = mainFrame:CreateTexture(nil, "BACKGROUND")
-    bgTex:SetAllPoints()
-    bgTex:SetTexture(0.05, 0.05, 0.05, 0.92)
-
-    -- Title bar
-    local titleBarTex = mainFrame:CreateTexture(nil, "BORDER")
-    titleBarTex:SetHeight(26)
-    titleBarTex:SetPoint("TOPLEFT", 0, 0)
-    titleBarTex:SetPoint("TOPRIGHT", 0, 0)
-    titleBarTex:SetTexture(0.12, 0.12, 0.12, 1)
-
-    -- Title text
-    local titleFs = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    titleFs:SetPoint("TOP", 0, -7)
-    titleFs:SetText("|cffffd700Talent Templates|r")
-
-    -- Scroll frame
+    -- Scroll frame (fills the full panel)
     local scrollFrame = CreateFrame("ScrollFrame", "TalentTemplatesScrollFrame", mainFrame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT",     5,  -30)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -26, 40)
+    scrollFrame:SetPoint("TOPLEFT",     0,   0)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -21, 0)
 
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
     scrollChild:SetWidth(BUTTON_WIDTH + 4)
@@ -441,15 +403,28 @@ local function CreateUI()
     scrollFrame:SetScrollChild(scrollChild)
     mainFrame.scrollChild = scrollChild
 
-    -- Save button
-    local saveBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
-    saveBtn:SetSize(140, 24)
-    saveBtn:SetPoint("BOTTOM", 0, 10)
-    saveBtn:SetText("Save Current")
-    saveBtn:SetScript("OnClick", function()
+    -- "Create Template" button on the talent frame
+    local createBtn = CreateFrame("Button", nil, PlayerTalentFrame, "UIPanelButtonTemplate")
+    createBtn:SetSize(140, 24)
+    createBtn:SetPoint("BOTTOMRIGHT", PlayerTalentFrame, "BOTTOMRIGHT", -10, 8)
+    createBtn:SetText("Create Template")
+    createBtn:SetScript("OnClick", function()
         local dlg = CreateSaveDialog()
         dlg:Show()
         dlg.nameBox:SetFocus()
+    end)
+
+    -- "Edit Templates" button toggles the side panel
+    local editBtn = CreateFrame("Button", nil, PlayerTalentFrame, "UIPanelButtonTemplate")
+    editBtn:SetSize(140, 24)
+    editBtn:SetPoint("BOTTOMRIGHT", PlayerTalentFrame, "BOTTOMRIGHT", -154, 8)
+    editBtn:SetText("Edit Templates")
+    editBtn:SetScript("OnClick", function()
+        if mainFrame:IsShown() then
+            mainFrame:Hide()
+        else
+            mainFrame:Show()
+        end
     end)
 
     addon.mainFrame = mainFrame
@@ -461,7 +436,7 @@ local function CreateUI()
     local hintFs = hintFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     hintFs:SetAllPoints()
     hintFs:SetTextColor(0.5, 0.5, 0.5)
-    hintFs:SetText("No templates saved.\nClick \"Save Current\" to create one.")
+    hintFs:SetText("No templates saved.\nClick \"Create Template\" to create one.")
     hintFs:SetJustifyH("CENTER")
     hintFs:SetJustifyV("MIDDLE")
     hintFrame:Hide()
