@@ -1,12 +1,28 @@
 local ADDON_NAME, addon = ...
 
 -- ===== CONSTANTS =====
-local PANEL_WIDTH    = 460
-local BUTTON_WIDTH   = 432
-local GLYPH_ROW_H    = 14   -- px per glyph row
-local BUTTON_TOP_H   = 74   -- px reserved for icon + name + info + divider
-local BUTTON_PAD     = 6    -- bottom padding inside each button
-local BUTTON_GAP     = 4    -- vertical gap between buttons
+local PANEL_WIDTH     = 460
+local BUTTON_WIDTH    = 432
+local GLYPH_ROW_H     = 14   -- px per glyph row
+local BUTTON_TOP_H    = 74   -- px reserved for icon + name + 1 info line + divider
+local INFO_LINE_H     = 14   -- px per info line (GameFontHighlightSmall)
+local INFO_TEXT_WIDTH = BUTTON_WIDTH - 68  -- info column width (minus icon + margins)
+local BUTTON_PAD      = 6    -- bottom padding inside each button
+local BUTTON_GAP      = 4    -- vertical gap between buttons
+
+-- ===== MEASURE HELPER =====
+-- Returns the extra height (beyond 1 line) needed for multi-line info text.
+local measureFs
+local function ExtraInfoHeight(info)
+    if not info or info == "" then return 0 end
+    if not measureFs then
+        measureFs = UIParent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        measureFs:SetWidth(INFO_TEXT_WIDTH)
+    end
+    measureFs:SetText(info)
+    local h = measureFs:GetStringHeight()
+    return math.max(0, h - INFO_LINE_H)
+end
 
 -- ===== DATABASE =====
 local function CheckInit()
@@ -106,41 +122,119 @@ function addon.ApplyPreset(preset)
     end
 end
 
--- ===== STATIC POPUP =====
-StaticPopupDialogs["TALENT_TEMPLATES_SAVE"] = {
-    text         = "Enter a name for this template:",
-    button1      = "Save",
-    button2      = "Cancel",
-    hasEditBox   = true,
-    OnAccept = function(self)
-        local text = self.editBox:GetText()
-        if text and text ~= "" then
-            addon.SaveCurrentPreset(text, "")
+-- ===== SAVE DIALOG =====
+local saveDialog
+
+local function CreateSaveDialog()
+    if saveDialog then return saveDialog end
+
+    saveDialog = CreateFrame("Frame", "TalentTemplatesSaveDialog", UIParent)
+    saveDialog:SetFrameStrata("DIALOG")
+    saveDialog:SetSize(360, 180)
+    saveDialog:SetPoint("CENTER")
+    saveDialog:SetMovable(true)
+    saveDialog:EnableMouse(true)
+    saveDialog:EnableKeyboard(true)
+    saveDialog:RegisterForDrag("LeftButton")
+    saveDialog:SetScript("OnDragStart", saveDialog.StartMoving)
+    saveDialog:SetScript("OnDragStop",  saveDialog.StopMovingOrSizing)
+    saveDialog:Hide()
+
+    -- Background
+    local bg = saveDialog:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetTexture(0.05, 0.05, 0.05, 0.95)
+
+    -- Title bar
+    local titleBar = saveDialog:CreateTexture(nil, "BORDER")
+    titleBar:SetHeight(26)
+    titleBar:SetPoint("TOPLEFT",  0, 0)
+    titleBar:SetPoint("TOPRIGHT", 0, 0)
+    titleBar:SetTexture(0.12, 0.12, 0.12, 1)
+
+    local titleFs = saveDialog:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    titleFs:SetPoint("TOP", 0, -7)
+    titleFs:SetText("|cffffd700Save Template|r")
+
+    -- Name field
+    local nameLabel = saveDialog:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    nameLabel:SetPoint("TOPLEFT", 14, -38)
+    nameLabel:SetText("Name:")
+
+    local nameBox = CreateFrame("EditBox", nil, saveDialog, "InputBoxTemplate")
+    nameBox:SetSize(328, 20)
+    nameBox:SetPoint("TOPLEFT", 14, -54)
+    nameBox:SetAutoFocus(false)
+    nameBox:SetMaxLetters(64)
+    saveDialog.nameBox = nameBox
+
+    -- Description field
+    local descLabel = saveDialog:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    descLabel:SetPoint("TOPLEFT", 14, -82)
+    descLabel:SetText("Description (optional):")
+
+    local descBox = CreateFrame("EditBox", nil, saveDialog, "InputBoxTemplate")
+    descBox:SetSize(328, 20)
+    descBox:SetPoint("TOPLEFT", 14, -98)
+    descBox:SetAutoFocus(false)
+    descBox:SetMaxLetters(256)
+    saveDialog.descBox = descBox
+
+    -- Tab / Enter navigation
+    nameBox:SetScript("OnTabPressed",   function() descBox:SetFocus() end)
+    nameBox:SetScript("OnEnterPressed", function() descBox:SetFocus() end)
+    descBox:SetScript("OnTabPressed",   function() nameBox:SetFocus() end)
+
+    -- Shared save action
+    local function CloseDialog()
+        saveDialog:Hide()
+        nameBox:SetText("")
+        descBox:SetText("")
+    end
+
+    local function DoSave()
+        local name = nameBox:GetText()
+        local desc = descBox:GetText()
+        if name and name ~= "" then
+            addon.SaveCurrentPreset(name, desc)
+            CloseDialog()
         end
-    end,
-    EditBoxOnEnterPressed = function(self)
-        local text = self:GetText()
-        if text and text ~= "" then
-            addon.SaveCurrentPreset(text, "")
-        end
-        self:GetParent():Hide()
-    end,
-    timeout      = 0,
-    whileDead    = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-}
+    end
+    descBox:SetScript("OnEnterPressed", DoSave)
+
+    -- Buttons
+    local saveBtn = CreateFrame("Button", nil, saveDialog, "UIPanelButtonTemplate")
+    saveBtn:SetSize(100, 24)
+    saveBtn:SetPoint("BOTTOMLEFT", 50, 12)
+    saveBtn:SetText("Save")
+    saveBtn:SetScript("OnClick", DoSave)
+
+    local cancelBtn = CreateFrame("Button", nil, saveDialog, "UIPanelButtonTemplate")
+    cancelBtn:SetSize(100, 24)
+    cancelBtn:SetPoint("BOTTOMRIGHT", -50, 12)
+    cancelBtn:SetText("Cancel")
+    cancelBtn:SetScript("OnClick", CloseDialog)
+
+    -- Close on Escape
+    saveDialog:SetScript("OnKeyDown", function(self, key)
+        if key == "ESCAPE" then CloseDialog() end
+    end)
+
+    return saveDialog
+end
 
 -- ===== UI HELPERS =====
 local function ButtonHeight(preset)
     local nMaj = #(preset.majorGlyphs or {})
     local nMin = #(preset.minorGlyphs or {})
     local rows = math.max(nMaj, nMin, 1)
-    return BUTTON_TOP_H + rows * GLYPH_ROW_H + BUTTON_PAD
+    return BUTTON_TOP_H + ExtraInfoHeight(preset.info) + rows * GLYPH_ROW_H + BUTTON_PAD
 end
 
 local function MakePresetButton(parent, preset, index, y)
-    local h   = ButtonHeight(preset)
+    local extraH = ExtraInfoHeight(preset.info)
+    local topH   = BUTTON_TOP_H + extraH
+    local h      = ButtonHeight(preset)
     local btn = CreateFrame("Button", nil, parent)
     btn:SetSize(BUTTON_WIDTH, h)
     btn:SetPoint("TOPLEFT", 0, y)
@@ -174,31 +268,32 @@ local function MakePresetButton(parent, preset, index, y)
     nameFs:SetJustifyH("LEFT")
     nameFs:SetText(preset.name or "Unnamed")
 
-    -- Info line (smaller, grey)
+    -- Info line (smaller, light)
     local infoFs = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     infoFs:SetPoint("TOPLEFT", nameFs, "BOTTOMLEFT", 0, -2)
     infoFs:SetPoint("TOPRIGHT", nameFs, "BOTTOMRIGHT", 0, -2)
+    infoFs:SetWidth(INFO_TEXT_WIDTH)
     infoFs:SetJustifyH("LEFT")
-    infoFs:SetTextColor(0.65, 0.65, 0.65)
+    infoFs:SetTextColor(0.9, 0.9, 0.9)
     infoFs:SetText(preset.info or "")
 
-    -- Divider
+    -- Divider (positioned below the info text, which may be multi-line)
     local div = btn:CreateTexture(nil, "ARTWORK")
     div:SetHeight(1)
-    div:SetPoint("TOPLEFT",  btn, "TOPLEFT",  5, -(BUTTON_TOP_H - 8))
-    div:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -5, -(BUTTON_TOP_H - 8))
+    div:SetPoint("TOPLEFT",  btn, "TOPLEFT",  5, -(topH - 8))
+    div:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -5, -(topH - 8))
     div:SetTexture(0.3, 0.3, 0.3, 0.8)
 
     -- Glyph column headers
     local hdrMaj = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    hdrMaj:SetPoint("TOPLEFT", btn, "TOPLEFT", 8, -(BUTTON_TOP_H - 4))
+    hdrMaj:SetPoint("TOPLEFT", btn, "TOPLEFT", 8, -(topH - 4))
     hdrMaj:SetWidth(200)
     hdrMaj:SetJustifyH("LEFT")
     hdrMaj:SetTextColor(1, 0.82, 0)
     hdrMaj:SetText("Major Glyphs")
 
     local hdrMin = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    hdrMin:SetPoint("TOPLEFT", btn, "TOPLEFT", 220, -(BUTTON_TOP_H - 4))
+    hdrMin:SetPoint("TOPLEFT", btn, "TOPLEFT", 220, -(topH - 4))
     hdrMin:SetWidth(200)
     hdrMin:SetJustifyH("LEFT")
     hdrMin:SetTextColor(0.4, 0.8, 1.0)
@@ -210,7 +305,7 @@ local function MakePresetButton(parent, preset, index, y)
     local rows = math.max(#majGlyphs, #minGlyphs, 1)
 
     for i = 1, rows do
-        local rowY = -(BUTTON_TOP_H + (i - 1) * GLYPH_ROW_H)
+        local rowY = -(topH + (i - 1) * GLYPH_ROW_H)
 
         local majFs = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         majFs:SetPoint("TOPLEFT", btn, "TOPLEFT", 8, rowY)
@@ -352,7 +447,9 @@ local function CreateUI()
     saveBtn:SetPoint("BOTTOM", 0, 10)
     saveBtn:SetText("Save Current")
     saveBtn:SetScript("OnClick", function()
-        StaticPopup_Show("TALENT_TEMPLATES_SAVE")
+        local dlg = CreateSaveDialog()
+        dlg:Show()
+        dlg.nameBox:SetFocus()
     end)
 
     addon.mainFrame = mainFrame
